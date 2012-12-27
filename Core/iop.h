@@ -60,7 +60,7 @@ void   EMU_CALL iop_setword(void *state, uint32 a, uint32 d);
 /*
 ** Uploads a section of data; only affects RAM
 */
-void   EMU_CALL iop_upload_to_ram(void *state, uint32 address, void *src, uint32 len);
+void   EMU_CALL iop_upload_to_ram(void *state, uint32 address, const void *src, uint32 len);
 
 /*
 ** IOP timing may be nonuniform

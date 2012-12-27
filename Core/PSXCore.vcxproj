@@ -111,6 +111,7 @@
     <ClCompile Include="bios.c" />
     <ClCompile Include="iop.c" />
     <ClCompile Include="ioptimer.c" />
+    <ClCompile Include="mkhebios.c" />
     <ClCompile Include="psx.c" />
     <ClCompile Include="r3000.c" />
     <ClCompile Include="r3000asm.c" />
@@ -122,9 +123,11 @@
   <ItemGroup>
     <ClInclude Include="emuconfig.h" />
     <ClInclude Include="bios.h" />
-    <ClInclude Include="hebios-50na.h" />
     <ClInclude Include="iop.h" />
     <ClInclude Include="ioptimer.h" />
+    <ClInclude Include="mkhebios.h" />
+    <ClInclude Include="mkhebios_overlays.h" />
+    <ClInclude Include="mkhebios_scripts.h" />
     <ClInclude Include="psx.h" />
     <ClInclude Include="r3000.h" />
     <ClInclude Include="r3000asm.h" />

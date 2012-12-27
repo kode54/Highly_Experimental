@@ -41,12 +41,12 @@
     <ClCompile Include="vfs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="mkhebios.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bios.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="hebios-50na.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="iop.h">
@@ -77,6 +77,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="emuconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mkhebios.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mkhebios_overlays.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mkhebios_scripts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

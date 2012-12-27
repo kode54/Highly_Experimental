@@ -1180,7 +1180,7 @@ void EMU_CALL iop_set_cycles_per_sample(void *state, uint32 cycles_per_sample) {
 //
 // Location checks not needed
 //
-void EMU_CALL iop_upload_to_ram(void *state, uint32 address, void *src, uint32 len) {
+void EMU_CALL iop_upload_to_ram(void *state, uint32 address, const void *src, uint32 len) {
   while(len) {
     uint32 advance;
     address &= 0x1FFFFF;
@@ -1195,7 +1195,7 @@ void EMU_CALL iop_upload_to_ram(void *state, uint32 address, void *src, uint32 l
 #else
     memcpy((PSXRAM_BYTE_NATIVE) + address, src, advance);
 #endif
-    src = (((char*)src) + advance);
+    src = (((const char*)src) + advance);
     len -= advance;
     address += advance;
   }
