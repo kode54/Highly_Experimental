@@ -7,7 +7,7 @@
 #ifndef __PSX_VFS_H__
 #define __PSX_VFS_H__
 
-#include "../../emuconfig.h"
+#include "emuconfig.h"
 
 #include "psx.h"
 

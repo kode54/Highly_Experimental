@@ -12,29 +12,30 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#include "hebios-50na.h"
+static uint8 *image = {0};
+static uint32 image_size = 0;
 
-uint8* EMU_CALL bios_get_image_native(void) { return (uint8*)image; }
-uint32 EMU_CALL bios_get_imagesize(void) { return sizeof(image); }
-
-/////////////////////////////////////////////////////////////////////////////
-
-static EMU_INLINE void EMU_CALL setup(uint8 *p, uint32 len) {
-  while(len--) { (*p) *= 37; p++; }
-}
+uint8* EMU_CALL bios_get_image_native(void) { return image; }
+uint32 EMU_CALL bios_get_imagesize(void) { return image_size; }
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Static init
 //
-sint32 EMU_CALL bios_init(void) {
-  static char u = 0;
-  if(u) return 0;
-
-  setup(bios_get_image_native(), bios_get_imagesize());
-
-  u = 1;
-  return 0;
+void EMU_CALL bios_set_image(uint8 *_image, uint32 _size) {
+#ifdef EMU_BIG_ENDIAN
+  uint32 i;
+  for (i = 0; i < _size; i += 4) {
+    uint8 a = _image[i + 0];
+    uint8 b = _image[i + 1];
+    _image[i + 0] = _image[i + 3];
+    _image[i + 1] = _image[i + 2];
+    _image[i + 2] = b;
+    _image[i + 3] = a;
+  }
+#endif
+  image = _image;
+  image_size = _size;
 }
 
 /////////////////////////////////////////////////////////////////////////////

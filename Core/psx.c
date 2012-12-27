@@ -97,7 +97,9 @@ sint32 EMU_CALL psx_init(void) {
   sint32 r;
   psx_endian_check();
   psx_size_check();
-  r = bios_init(); if(r) return r;
+
+  // BIOS must be loaded first
+  if ( !bios_get_image_native() || !bios_get_imagesize() ) return 0;
   //
   // BIOS must be a power of 2, or all hell breaks loose
   //

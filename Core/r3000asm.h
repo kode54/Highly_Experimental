@@ -7,7 +7,7 @@
 #ifndef __PSX_R3000ASM_H__
 #define __PSX_R3000ASM_H__
 
-#include "../../emuconfig.h"
+#include "emuconfig.h"
 
 #ifdef __cplusplus
 extern "C" {

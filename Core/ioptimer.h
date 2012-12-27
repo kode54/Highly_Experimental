@@ -7,7 +7,7 @@
 #ifndef __PSX_IOPTIMER_H__
 #define __PSX_IOPTIMER_H__
 
-#include "../../emuconfig.h"
+#include "emuconfig.h"
 
 #ifdef __cplusplus
 extern "C" {

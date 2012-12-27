@@ -7,7 +7,7 @@
 #ifndef __PSX_BIOS_H__
 #define __PSX_BIOS_H__
 
-#include "../../emuconfig.h"
+#include "emuconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,7 +16,7 @@ extern "C" {
 uint8* EMU_CALL bios_get_image_native(void);
 uint32 EMU_CALL bios_get_imagesize(void);
 
-sint32 EMU_CALL bios_init(void);
+void EMU_CALL bios_set_image(uint8 *, uint32);
 
 /*
 ** Find environment variables
