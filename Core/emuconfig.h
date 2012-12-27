@@ -62,6 +62,17 @@
 #define EMU_CALL_
 #define EMU_INLINE __inline
 
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#define uint8  uint8_t
+#define uint16 uint16_t
+#define uint32 uint32_t
+#define uint64 uint64_t
+#define sint8  int8_t
+#define sint16 int16_t
+#define sint32 int32_t
+#define sint64 int64_t
+#else
 #define uint8  unsigned char
 #define uint16 unsigned short
 #define uint32 unsigned int
@@ -70,6 +81,7 @@
 #define sint16   signed short
 #define sint32   signed int
 #define sint64   signed long long
+#endif
 
 #endif
 
