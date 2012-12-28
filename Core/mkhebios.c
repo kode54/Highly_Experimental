@@ -11,6 +11,12 @@
 #define strcasecmp _stricmp
 #endif
 
+#if 0
+#define log_error do { fprintf(stderr, "he: error at line %u\n", __LINE__); } while(0)
+#else
+#define log_error
+#endif
+
 /***************************************************************************/
 
 static uint16 get16lsb(const uint8 *p) {
@@ -136,6 +142,7 @@ static int find_romdir_entry(
       if(out_code ) *out_code  = c;
       if(out_start) *out_start = ofs;
       if(out_size ) *out_size  = s;
+      log_error;
       return 1;
     }
     // round up to the nearest paragraph and advance offset
@@ -186,8 +193,9 @@ static struct MODULE *master_find_module(struct MKHEBIOS *state, const char *nam
 
 static struct MKHEBIOS * master_init(void) {
   struct MKHEBIOS * state = ( struct MKHEBIOS * ) malloc( sizeof( struct MKHEBIOS ) );
-  if ( !state ) return NULL;
+  if ( !state ) { log_error; return NULL; }
   memset( state, 0, sizeof( struct MKHEBIOS ) );
+  return state;
 }
 
 static void master_iopbtconf_append(struct MKHEBIOS *state, const char *line) {
@@ -250,7 +258,7 @@ static int master_bios_modinfo(
   uint32 size;
 
   rbase = find_romdir(state->master_bios, state->master_bios_size);
-  if(!rbase) return 1;
+  if(!rbase) { log_error; return 1; }
   success = find_romdir_entry(
     state->master_bios, state->master_bios_size,
     rbase,
@@ -259,7 +267,7 @@ static int master_bios_modinfo(
     &start,
     &size
   );
-  if(!success) return 1;
+  if(!success) { log_error; return 1; }
   if(out_mod) init_mod_fields(out_mod, name, code, start, size);
   return 0;
 }
@@ -324,7 +332,7 @@ static void rom_usage_set_all_pinned(struct MKHEBIOS * state) {
 static int any_unhandled_pinned_modules(struct MKHEBIOS * state) {
   int n;
   for(n = 0; n < state->master_module_pin_n; n++) {
-    if(state->master_module_pin_list[n].start >= state->attempt_romdir_ofs) return 1;
+    if(state->master_module_pin_list[n].start >= state->attempt_romdir_ofs) { log_error; return 1; }
   }
   return 0;
 }
@@ -345,7 +353,7 @@ static uint32 space_in_romdir(struct MKHEBIOS * state) { return state->romdir_si
 
 static int line_from_arbitrary(struct MKHEBIOS * state, const char *name, uint16 code, uint32 size) {
   uint8 *p = state->romdir + state->attempt_romdir_line;
-  if(space_in_romdir(state) < 0x10) return 1;
+  if(space_in_romdir(state) < 0x10) { log_error; return 1; }
   memset  (p, 0, 0x10);
   strcpy  (p, name);
   put16lsb(p + 0xA, code);
@@ -364,7 +372,7 @@ static int handle_pinned(struct MKHEBIOS * state) {
   for(;;) {
     struct MODULE *m = rom_usage_get_module(state, state->attempt_romdir_ofs);
     if(!m) break;
-    if(line_from_module(state, m)) return 1;
+    if(line_from_module(state, m)) { log_error; return 1; }
     state->attempt_romdir_ofs += (m->size + 0xF) & (~0xF);
   }
   return 0;
@@ -374,12 +382,12 @@ static int seek_to_free(struct MKHEBIOS * state, uint32 s) {
 //printf("seek_to_free(%X)\n",s);
   for(;;) {
     uint32 cf;
-    if(handle_pinned(state)) return 1;
+    if(handle_pinned(state)) { log_error; return 1; }
     cf = rom_usage_get_free_space(state, state->attempt_romdir_ofs);
 //printf("  cf=%X\n",cf);
-    if(!cf) return 1;
+    if(!cf) { log_error; return 1; }
     if(cf >= s) return 0;
-    if(line_from_blank(state, cf)) return 1;
+    if(line_from_blank(state, cf)) { log_error; return 1; }
     state->attempt_romdir_ofs += cf;
   }
   return 0;
@@ -391,9 +399,9 @@ static int seek_to_free(struct MKHEBIOS * state, uint32 s) {
 static int attempt_rebuild_romdir(struct MKHEBIOS * state) {
   int n;
 
-  if(!state->romdir) return 1;
+  if(!state->romdir) { log_error; return 1; }
   state->romdir_size &= ~0xF;
-  if(!state->romdir_size) return 1;
+  if(!state->romdir_size) { log_error; return 1; }
 
   memset(state->romdir, 0, state->romdir_size);
 
@@ -405,10 +413,10 @@ static int attempt_rebuild_romdir(struct MKHEBIOS * state) {
   rom_usage_clear(state);
   rom_usage_set_all_pinned(state);
 
-  if(seek_to_free(state, state->romdir_size)) return 1;
+  if(seek_to_free(state, state->romdir_size)) { log_error; return 1; }
 //printf("a l=%X ofs=%X\n",attempt_romdir_line,attempt_romdir_ofs);
 
-  if(line_from_arbitrary(state, "ROMDIR", state->romdir_code, state->romdir_size)) return 1;
+  if(line_from_arbitrary(state, "ROMDIR", state->romdir_code, state->romdir_size)) { log_error; return 1; }
   state->attempt_romdir_ofs += state->romdir_size;
 //printf("b l=%X ofs=%X\n",attempt_romdir_line,attempt_romdir_ofs);
 
@@ -417,9 +425,9 @@ static int attempt_rebuild_romdir(struct MKHEBIOS * state) {
 //printf("n%02d a l=%X ofs=%X\n",n,attempt_romdir_line,attempt_romdir_ofs);
     size = state->master_module_free_list[n].size;
 //printf("n%02d b l=%X ofs=%X\n",n,attempt_romdir_line,attempt_romdir_ofs);
-    if(seek_to_free(state, size)) return 1;
+    if(seek_to_free(state, size)) { log_error; return 1; }
 //printf("n%02d c l=%X ofs=%X\n",n,attempt_romdir_line,attempt_romdir_ofs);
-    if(line_from_module(state, state->master_module_free_list + n)) return 1;
+    if(line_from_module(state, state->master_module_free_list + n)) { log_error; return 1; }
 //printf("n%02d d l=%X ofs=%X\n",n,attempt_romdir_line,attempt_romdir_ofs);
     state->attempt_romdir_ofs += (size + 0xF) & (~0xF);
 //printf("n%02d e l=%X ofs=%X\n",n,attempt_romdir_line,attempt_romdir_ofs);
@@ -433,11 +441,11 @@ static int attempt_rebuild_romdir(struct MKHEBIOS * state) {
     if(!(any_unhandled_pinned_modules(state))) break;
     c = closest_unhandled_pinned_module(state);
     blank = c - state->attempt_romdir_ofs;
-    if(line_from_blank(state, blank)) return 1;
+    if(line_from_blank(state, blank)) { log_error; return 1; }
     state->attempt_romdir_ofs += blank;
   }
 
-  if(line_from_eod(state)) return 1;
+  if(line_from_eod(state)) { log_error; return 1; }
 
   return 0;
 }
@@ -447,7 +455,7 @@ static int attempt_rebuild_romdir(struct MKHEBIOS * state) {
 static int find_romdir_code(struct MKHEBIOS * state) {
   struct MODULE mod;
   if(master_bios_modinfo(state, "ROMDIR", &mod)) {
-    return 1;
+    { log_error; return 1; }
   }
   state->romdir_code = mod.code;
   return 0;
@@ -518,7 +526,7 @@ file_ok: goto codecheck;
 bios_ok: goto codecheck;
 
 giveup:
-  return 1;
+  { log_error; return 1; }
 
 codecheck:
   printf(" ");
@@ -530,14 +538,14 @@ codecheck:
     struct MODULE tmpmod;
     if(master_bios_modinfo(state, n, &tmpmod)) {
       free(mod.ext_data);
-      return 1;
+      { log_error; return 1; }
     }
     mod.code = tmpmod.code;
   }
 
   if(mod.size < 4 || memcmp(mod.ext_data, "\x7F" "ELF", 4)) {
     free(mod.ext_data);
-    return 1;
+    { log_error; return 1; }
   }
 
   master_module_free_add(state, &mod);
@@ -557,7 +565,7 @@ static int pin(struct MKHEBIOS * state, const char *modname) {
   for(i = 0; i < l; i++) { n[i] = toupper(n[i]); }
 
   if(master_bios_modinfo(state, n, &mod)) {
-    return 1;
+    { log_error; return 1; }
   }
 
   mod.ext_data = malloc(mod.size);
@@ -585,7 +593,7 @@ static int mkhebios_iopbtconf_line(void *ctx, int linenum, const char *line) {
   master_iopbtconf_append(state, line);
   if(!isalpha(line[0])) return 0;
   r = irx(state, line);
-  if(r) return 1;
+  if(r) { log_error; return 1; }
   return 0;
 }
 
@@ -595,14 +603,14 @@ static int mkhebios_script_iopbtconf(struct MKHEBIOS * state, const char *args) 
   struct MODULE mod;
 
   if(master_bios_modinfo(state, "IOPBTCONF", &mod)) {
-    return 1;
+    { log_error; return 1; }
   }
 
-  if(read_script_file(state->iopbtconf_script, mkhebios_iopbtconf_line, state)) return 1;
+  if(read_script_file(state->iopbtconf_script, mkhebios_iopbtconf_line, state)) { log_error; return 1; }
 
   mod.size = strlen(state->master_iopbtconf);
   mod.ext_data = malloc(mod.size);
-  if(!mod.ext_data) return 1;
+  if(!mod.ext_data) { log_error; return 1; }
   memcpy(mod.ext_data, state->master_iopbtconf, mod.size);
   master_module_free_add(state, &mod);
 
@@ -662,13 +670,13 @@ static int mkhebios_script_rebuild(struct MKHEBIOS *state, const char *args) {
   ) {
     if(state->romdir) { free(state->romdir); state->romdir = NULL; }
     state->romdir = malloc(state->romdir_size);
-    if(!state->romdir) return 1;
+    if(!state->romdir) { log_error; return 1; }
     if(!attempt_rebuild_romdir(state)) break;
     if(state->romdir) { free(state->romdir); state->romdir = NULL; }
   }
 
   if(!state->romdir) {
-    return 1;
+    log_error; return 1;
   }
 
   rebuild_master_bios(state);
@@ -703,7 +711,7 @@ static int mkhebios_script_patch(struct MKHEBIOS *state, const char *args) {
          if(c >= 'A' && c <= 'F') { c -= 'A'; c += 10; }
     else if(c >= 'a' && c <= 'f') { c -= 'a'; c += 10; }
     else if(c >= '0' && c <= '9') { c -= '0'; c +=  0; }
-    else { return 1; }
+    else { log_error; return 1; }
     patchstart <<= 4;
     patchstart += c;
   }
@@ -715,7 +723,7 @@ static int mkhebios_script_patch(struct MKHEBIOS *state, const char *args) {
          if(c >= 'A' && c <= 'F') { c -= 'A'; c += 10; }
     else if(c >= 'a' && c <= 'f') { c -= 'a'; c += 10; }
     else if(c >= '0' && c <= '9') { c -= '0'; c +=  0; }
-    else { return 1; }
+    else { log_error; return 1; }
     patchfrom[patchfromny/2] <<= 4;
     patchfrom[patchfromny/2] += c;
     patchfromny++;
@@ -727,21 +735,21 @@ static int mkhebios_script_patch(struct MKHEBIOS *state, const char *args) {
          if(c >= 'A' && c <= 'F') { c -= 'A'; c += 10; }
     else if(c >= 'a' && c <= 'f') { c -= 'a'; c += 10; }
     else if(c >= '0' && c <= '9') { c -= '0'; c +=  0; }
-    else { return 1; }
+    else { log_error; return 1; }
     patchto[patchtony/2] <<= 4;
     patchto[patchtony/2] += c;
     patchtony++;
   }
 
-  if(patchfromny != patchtony) { return 1; }
+  if(patchfromny != patchtony) { log_error; return 1; }
   patchlen = patchfromny / 2;
-  if(!patchlen) { return 1; }
+  if(!patchlen) { log_error; return 1; }
 
-  if(patchstart >= state->master_bios_size) { return 1; }
-  if((patchstart + patchlen) > state->master_bios_size) { return 1; }
+  if(patchstart >= state->master_bios_size) { log_error; return 1; }
+  if((patchstart + patchlen) > state->master_bios_size) { log_error; return 1; }
 
   if(memcmp(state->master_bios + patchstart, patchfrom, patchlen)) {
-    return 1;
+    log_error; return 1;
   }
 
   memcpy(state->master_bios + patchstart, patchto, patchlen);
@@ -756,27 +764,27 @@ static int mkhebios_script_asc(struct MKHEBIOS *state, const char *args) {
 
   for(;;) {
     int c = *args++;
-    if(!c) { return 1; }
+    if(!c) { log_error; return 1; }
     if(isspace(c)) continue;
     if(c == ':') break;
          if(c >= 'A' && c <= 'F') { c -= 'A'; c += 10; }
     else if(c >= 'a' && c <= 'f') { c -= 'a'; c += 10; }
     else if(c >= '0' && c <= '9') { c -= '0'; c +=  0; }
-    else { return 1; }
+    else { log_error; return 1; }
     ascstart <<= 4;
     ascstart += c;
   }
 
   for(;;) {
     int c = *args++;
-    if(!c) { return 1; }
+    if(!c) { log_error; return 1; }
     if(isspace(c)) continue;
     if(c == '\"') break;
   }
 
   for(;;) {
     int c = *args++;
-    if(!c) { return 1; }
+    if(!c) { log_error; return 1; }
     if(c == '\"') break;
     state->master_bios[ascstart % state->master_bios_size] = c;
     ascstart++;
@@ -823,7 +831,7 @@ int mkhebios_script_line(void *ctx, int linenum, const char *line) {
       break;
     }
   }
-  return 1;
+  log_error; return 1;
 }
 
 /***************************************************************************/
@@ -838,14 +846,15 @@ void * EMU_CALL mkhebios_create( void * ps2_bios, int *size )
 
   struct MKHEBIOS * state;
 
-  if ( *size != 0x400000 ) return NULL;
+  if ( *size != 0x400000 ) { log_error; return NULL; }
 
   state = master_init();
-  if ( !state ) return NULL;
+  if ( !state ) { log_error; return NULL; }
 
   state->master_bios = (uint8 *) malloc( 0x400000 );
   if ( !state->master_bios ) {
     free( state );
+    log_error;
     return NULL;
   }
 
@@ -859,9 +868,11 @@ void * EMU_CALL mkhebios_create( void * ps2_bios, int *size )
   if ( rval ) {
     bios_out = NULL;
     free( state->master_bios );
+    log_error;
   }
   else {
     bios_out = realloc( state->master_bios, 0x400000 / 8 );
+    if ( !bios_out ) log_error;
     *size = 0x400000 / 8;
   }
 
